@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Time & Age Calculator — US ↔ India</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="world-map-bg" aria-hidden="true">
+    <div class="earth-glow"></div>
+    <svg viewBox="0 0 1000 500" class="world-svg" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <filter id="softGlow" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="3" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+
+      <g id="starsLayer"></g>
+
+      <g class="continents-outline">
+        <path d="M60,70 C110,45 190,50 230,80 C270,60 320,90 310,130 C330,160 290,195 250,185 C230,215 180,210 170,175 C130,190 90,160 100,120 C70,115 50,95 60,70 Z" />
+        <path d="M255,220 C290,205 320,225 315,265 C340,300 320,350 295,385 C300,420 270,440 255,410 C225,415 215,375 235,345 C215,310 230,265 255,220 Z" />
+        <path d="M460,55 C495,40 540,50 545,80 C570,95 555,125 525,120 C510,145 475,140 470,110 C450,105 445,75 460,55 Z" />
+        <path d="M440,150 C480,135 545,145 560,190 C590,230 580,290 555,330 C560,370 525,400 495,375 C465,395 445,360 460,325 C430,290 425,235 445,195 C425,180 425,165 440,150 Z" />
+        <path d="M600,45 C660,30 760,35 830,65 C890,80 930,110 915,150 C935,180 900,205 860,195 C845,225 800,215 790,185 C750,215 700,200 690,165 C650,180 615,150 625,115 C595,100 585,65 600,45 Z" />
+        <path d="M660,175 C695,165 730,180 735,215 C750,245 725,275 695,265 C670,285 645,255 655,225 C635,210 640,185 660,175 Z" />
+        <path d="M800,300 C840,285 895,295 905,325 C925,345 905,375 875,370 C860,390 825,380 820,355 C795,345 790,315 800,300 Z" />
+      </g>
+
+      <g id="cityLightsLayer" filter="url(#softGlow)"></g>
+
+      <path id="flightPathGold" class="flight-path flight-path-gold" d="M230,145 C 330,25 560,20 715,205" fill="none" />
+      <path id="flightPathBlue" class="flight-path flight-path-blue" d="M230,160 C 350,110 560,110 700,225" fill="none" />
+
+      <g class="marker marker-usa">
+        <circle class="marker-ring" cx="230" cy="152" r="10" />
+        <circle class="marker-ring marker-ring-2" cx="230" cy="152" r="10" />
+        <g class="pin" transform="translate(230,152)">
+          <path class="pin-shape" d="M0,-26 C11,-26 19,-18 19,-8 C19,4 0,22 0,22 C0,22 -19,4 -19,-8 C-19,-18 -11,-26 0,-26 Z" />
+          <clipPath id="flagClipUSA"><circle r="12" cy="-10" /></clipPath>
+          <g clip-path="url(#flagClipUSA)" transform="translate(0,-10)">
+            <rect x="-12" y="-12" width="24" height="24" fill="#B22234" />
+            <rect x="-12" y="-9" width="24" height="3.4" fill="#fff" />
+            <rect x="-12" y="-2.2" width="24" height="3.4" fill="#fff" />
+            <rect x="-12" y="4.6" width="24" height="3.4" fill="#fff" />
+            <rect x="-12" y="-12" width="11" height="11" fill="#3C3B6E" />
+          </g>
+        </g>
+        <text x="230" y="192" class="marker-label" text-anchor="middle">USA</text>
+      </g>
+
+      <g class="marker marker-india">
+        <circle class="marker-ring" cx="715" cy="212" r="10" />
+        <circle class="marker-ring marker-ring-2" cx="715" cy="212" r="10" />
+        <g class="pin" transform="translate(715,212)">
+          <path class="pin-shape" d="M0,-26 C11,-26 19,-18 19,-8 C19,4 0,22 0,22 C0,22 -19,4 -19,-8 C-19,-18 -11,-26 0,-26 Z" />
+          <clipPath id="flagClipIN"><circle r="12" cy="-10" /></clipPath>
+          <g clip-path="url(#flagClipIN)" transform="translate(0,-10)">
+            <rect x="-12" y="-12" width="24" height="8" fill="#FF9933" />
+            <rect x="-12" y="-4" width="24" height="8" fill="#fff" />
+            <rect x="-12" y="4" width="24" height="8" fill="#128807" />
+            <circle r="2.6" fill="#000088" />
+          </g>
+        </g>
+        <text x="715" y="252" class="marker-label" text-anchor="middle">India</text>
+      </g>
+
+      <g class="plane plane-gold">
+        <path d="M0,-4 L14,0 L0,4 L3,0 Z" />
+        <animateMotion dur="6s" repeatCount="indefinite" rotate="auto">
+          <mpath href="#flightPathGold" />
+        </animateMotion>
+      </g>
+      <g class="plane plane-blue">
+        <path d="M0,-4 L14,0 L0,4 L3,0 Z" />
+        <animateMotion dur="6.5s" begin="1.5s" repeatCount="indefinite" rotate="auto">
+          <mpath href="#flightPathBlue" />
+        </animateMotion>
+      </g>
+    </svg>
+
+    <svg class="compass-icon" viewBox="0 0 60 60" aria-hidden="true">
+      <circle cx="30" cy="30" r="26" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1" />
+      <path d="M30,6 L34,28 L30,54 L26,28 Z" fill="rgba(255,255,255,0.5)" />
+      <path d="M6,30 L28,26 L54,30 L28,34 Z" fill="rgba(255,255,255,0.5)" />
+      <text x="30" y="14" text-anchor="middle" class="compass-label">N</text>
+      <text x="30" y="52" text-anchor="middle" class="compass-label">S</text>
+      <text x="8" y="33" text-anchor="middle" class="compass-label">W</text>
+      <text x="52" y="33" text-anchor="middle" class="compass-label">E</text>
+    </svg>
+  </div>
+
+  <div class="hero">
+    <div class="hero-title-serif">Time has</div>
+    <div class="hero-title-script">no borders</div>
+    <div class="hero-signature">— Abhi PV —</div>
+  </div>
+
+  <div class="app">
+    <header class="app-header">
+      <h1>Time &amp; Age Calculator</h1>
+      <p class="subtitle">US ⇄ India time converter and precise age calculator</p>
+    </header>
+
+    <section class="card live-clock" id="liveClock">
+      <div class="clock-col">
+        <div class="clock-label">United States (Eastern)</div>
+        <div class="clock-time" id="clockUS">--:--:--</div>
+        <div class="clock-meta" id="clockUSMeta">--</div>
+      </div>
+      <div class="clock-col">
+        <div class="clock-label">India (IST)</div>
+        <div class="clock-time" id="clockIN">--:--:--</div>
+        <div class="clock-meta" id="clockINMeta">--</div>
+      </div>
+    </section>
+
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="converter">Time Converter</button>
+      <button class="tab-btn" data-tab="age">Age Calculator</button>
+      <button class="tab-btn" data-tab="junk">Junk Finder</button>
+    </nav>
+
+    <section class="card tab-panel" id="converterPanel">
+      <div class="row">
+        <label>Direction</label>
+        <div class="btn-group">
+          <button class="choice-btn active" id="dirUStoIN">US → India</button>
+          <button class="choice-btn" id="dirINtoUS">India → US</button>
+        </div>
+      </div>
+
+      <div class="row" id="usZoneRow">
+        <label for="usZone">US Timezone</label>
+        <select id="usZone">
+          <option value="America/New_York">Eastern (ET)</option>
+          <option value="America/Chicago">Central (CT)</option>
+          <option value="America/Denver">Mountain (MT)</option>
+          <option value="America/Los_Angeles">Pacific (PT)</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label for="dateInput" id="dateInputLabel">Date &amp; Time (US side)</label>
+        <input type="text" id="dateInput" placeholder="e.g. 09-Sep-2026 10:00 AM">
+        <div class="hint">Formats: 09-Sep-2026 10:00 AM · 2026-09-09 22:30 · 09/27/1950 · September 27, 1950</div>
+      </div>
+
+      <div class="actions">
+        <button class="icon-btn" id="swapBtn">⇄ Swap Direction</button>
+      </div>
+
+      <div class="result" id="converterResult"></div>
+    </section>
+
+    <section class="card tab-panel hidden" id="agePanel">
+      <div class="row">
+        <label for="dobInput">Date of Birth</label>
+        <input type="text" id="dobInput" placeholder="e.g. 27-Sep-1950">
+        <div class="hint">Formats: 27-Sep-1950 · 1950-09-27 · 09/27/1950 · September 27, 1950</div>
+      </div>
+      <div class="actions">
+        <button class="icon-btn" id="clearAgeBtn">Clear</button>
+      </div>
+      <div class="result" id="ageResult"></div>
+    </section>
+
+    <section class="card tab-panel hidden" id="junkPanel">
+      <div class="row">
+        <label for="junkInput">Paste text</label>
+        <textarea id="junkInput" rows="8" placeholder="Paste text here..."></textarea>
+      </div>
+      <div class="actions" style="justify-content: space-between;">
+        <div class="junk-count" id="junkCount"></div>
+        <div style="display:flex; gap:8px;">
+          <button class="icon-btn" id="highlightJunkBtn">Highlight Junk</button>
+          <button class="icon-btn" id="removeJunkBtn">Remove Junk</button>
+        </div>
+      </div>
+      <div class="row">
+        <label>Preview</label>
+        <div class="junk-preview" id="junkPreview"></div>
+      </div>
+      <div class="row hidden" id="junkOutputRow">
+        <label for="junkOutput">Cleaned text</label>
+        <textarea id="junkOutput" rows="8" readonly></textarea>
+        <button class="copy-btn" id="copyJunkBtn">Copy cleaned text</button>
+      </div>
+    </section>
+
+    <footer class="app-footer">Handles DST automatically · No data leaves your browser</footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
