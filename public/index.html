@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Time & Age Calculator — US ↔ India</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="app-header">
+      <h1>Time &amp; Age Calculator</h1>
+      <p class="subtitle">US ⇄ India time converter and precise age calculator</p>
+    </header>
+
+    <section class="card live-clock" id="liveClock">
+      <div class="clock-col">
+        <div class="clock-label">United States (Eastern)</div>
+        <div class="clock-time" id="clockUS">--:--:--</div>
+        <div class="clock-meta" id="clockUSMeta">--</div>
+      </div>
+      <div class="clock-col">
+        <div class="clock-label">India (IST)</div>
+        <div class="clock-time" id="clockIN">--:--:--</div>
+        <div class="clock-meta" id="clockINMeta">--</div>
+      </div>
+    </section>
+
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="converter">Time Converter</button>
+      <button class="tab-btn" data-tab="age">Age Calculator</button>
+    </nav>
+
+    <section class="card tab-panel" id="converterPanel">
+      <div class="row">
+        <label>Direction</label>
+        <div class="btn-group">
+          <button class="choice-btn active" id="dirUStoIN">US → India</button>
+          <button class="choice-btn" id="dirINtoUS">India → US</button>
+        </div>
+      </div>
+
+      <div class="row" id="usZoneRow">
+        <label for="usZone">US Timezone</label>
+        <select id="usZone">
+          <option value="America/New_York">Eastern (ET)</option>
+          <option value="America/Chicago">Central (CT)</option>
+          <option value="America/Denver">Mountain (MT)</option>
+          <option value="America/Los_Angeles">Pacific (PT)</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label for="dateInput" id="dateInputLabel">Date &amp; Time (US side)</label>
+        <input type="text" id="dateInput" placeholder="e.g. 09-Sep-2026 10:00 AM">
+        <div class="hint">Formats: 09-Sep-2026 10:00 AM · 2026-09-09 22:30 · 09/27/1950 · September 27, 1950</div>
+      </div>
+
+      <div class="actions">
+        <button class="icon-btn" id="swapBtn">⇄ Swap Direction</button>
+      </div>
+
+      <div class="result" id="converterResult"></div>
+    </section>
+
+    <section class="card tab-panel hidden" id="agePanel">
+      <div class="row">
+        <label for="dobInput">Date of Birth</label>
+        <input type="text" id="dobInput" placeholder="e.g. 27-Sep-1950">
+        <div class="hint">Formats: 27-Sep-1950 · 1950-09-27 · 09/27/1950 · September 27, 1950</div>
+      </div>
+      <div class="actions">
+        <button class="icon-btn" id="clearAgeBtn">Clear</button>
+      </div>
+      <div class="result" id="ageResult"></div>
+    </section>
+
+    <footer class="app-footer">Handles DST automatically · No data leaves your browser</footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
