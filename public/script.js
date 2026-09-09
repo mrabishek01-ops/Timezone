@@ -1,5 +1,8 @@
 // ---------- Timezone helpers ----------
 
+let timeFormatMode = (typeof localStorage !== 'undefined' && localStorage.getItem('timeFormat')) || '12';
+
+
 function getOffsetMinutes(date, timeZone) {
   const dtf = new Intl.DateTimeFormat('en-US', {
     timeZone, hourCycle: 'h23',
@@ -34,7 +37,7 @@ function getZoneAbbrev(date, timeZone) {
 function formatInZone(date, timeZone, opts) {
   const dtf = new Intl.DateTimeFormat('en-US', Object.assign({
     timeZone, year: 'numeric', month: 'short', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', hour12: true
+    hour: '2-digit', minute: '2-digit', hour12: timeFormatMode === '12'
   }, opts || {}));
   return dtf.format(date);
 }
@@ -187,15 +190,33 @@ CITY_LIGHT_ZONES.forEach(([x1, y1, x2, y2], idx) => {
 
 function updateLiveClock() {
   const now = new Date();
-  document.getElementById('clockUS').textContent = formatInZone(now, 'America/New_York', { hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit', month: undefined, day: undefined, year: undefined });
+  document.getElementById('clockUS').textContent = formatInZone(now, 'America/New_York', { hour: '2-digit', minute: '2-digit', second: '2-digit', month: undefined, day: undefined, year: undefined });
   document.getElementById('clockUSMeta').textContent =
     formatInZone(now, 'America/New_York', { hour: undefined, minute: undefined }) + ' · ' + getZoneAbbrev(now, 'America/New_York');
-  document.getElementById('clockIN').textContent = formatInZone(now, IST_ZONE, { hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit', month: undefined, day: undefined, year: undefined });
+  document.getElementById('clockIN').textContent = formatInZone(now, IST_ZONE, { hour: '2-digit', minute: '2-digit', second: '2-digit', month: undefined, day: undefined, year: undefined });
   document.getElementById('clockINMeta').textContent =
     formatInZone(now, IST_ZONE, { hour: undefined, minute: undefined }) + ' · ' + getZoneAbbrev(now, IST_ZONE);
 }
 setInterval(updateLiveClock, 1000);
 updateLiveClock();
+
+// ---------- Time Format Toggle ----------
+
+const format12Btn = document.getElementById('format12Btn');
+const format24Btn = document.getElementById('format24Btn');
+
+function setTimeFormat(mode) {
+  timeFormatMode = mode;
+  if (typeof localStorage !== 'undefined') localStorage.setItem('timeFormat', mode);
+  format12Btn.classList.toggle('active', mode === '12');
+  format24Btn.classList.toggle('active', mode === '24');
+  updateLiveClock();
+  if (typeof runConversion === 'function') runConversion();
+}
+
+format12Btn.addEventListener('click', () => setTimeFormat('12'));
+format24Btn.addEventListener('click', () => setTimeFormat('24'));
+setTimeFormat(timeFormatMode);
 
 // ---------- Tabs ----------
 

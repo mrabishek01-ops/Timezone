@@ -284,6 +284,26 @@ body {
   margin-top: 4px;
 }
 
+.format-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.format-toggle-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.format-toggle {
+  max-width: 220px;
+}
+
 .tabs {
   display: flex;
   gap: 8px;
