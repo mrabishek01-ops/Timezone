@@ -527,6 +527,9 @@ const chessYouAre = document.getElementById('chessYouAre');
 const chessTurnIndicator = document.getElementById('chessTurnIndicator');
 const chessMessage = document.getElementById('chessMessage');
 const chessResignBtn = document.getElementById('chessResignBtn');
+const chessChatLog = document.getElementById('chessChatLog');
+const chessChatInput = document.getElementById('chessChatInput');
+const chessChatSendBtn = document.getElementById('chessChatSendBtn');
 
 const promotionModal = document.getElementById('promotionModal');
 
@@ -632,9 +635,15 @@ function handleChessMessage(msg) {
       chessState.inCheck = false;
       chessYouAre.textContent = `You: ${chessState.myColor === 'white' ? 'White' : 'Black'}`;
       chessMessage.textContent = '';
+      chessChatLog.innerHTML = '';
+      appendChatMessage({ system: true, text: 'Game started — say hi!' });
       chessShowView('game');
       renderChessBoard();
       updateTurnIndicator();
+      break;
+
+    case 'chat':
+      appendChatMessage({ color: msg.color, text: msg.text });
       break;
 
     case 'legal_moves':
@@ -834,4 +843,41 @@ chessResignBtn.addEventListener('click', () => {
   if (chessState.status === 'active' && chessState.ws) {
     chessState.ws.send(JSON.stringify({ type: 'resign' }));
   }
+});
+
+function appendChatMessage({ color, text, system }) {
+  const bubble = document.createElement('div');
+
+  if (system) {
+    bubble.className = 'chess-chat-system';
+    bubble.textContent = text;
+  } else {
+    const isMine = color === chessState.myColor;
+    bubble.className = 'chess-chat-bubble ' + (isMine ? 'chess-chat-mine' : 'chess-chat-theirs');
+
+    const sender = document.createElement('span');
+    sender.className = 'chess-chat-sender';
+    sender.textContent = isMine ? 'You' : (color === 'white' ? 'White' : 'Black');
+    bubble.appendChild(sender);
+
+    const body = document.createElement('span');
+    body.textContent = text; // textContent, never innerHTML — no HTML injection from chat
+    bubble.appendChild(body);
+  }
+
+  chessChatLog.appendChild(bubble);
+  chessChatLog.scrollTop = chessChatLog.scrollHeight;
+}
+
+function sendChessChat() {
+  const text = chessChatInput.value.trim();
+  if (!text || !chessState.ws || chessState.ws.readyState !== WebSocket.OPEN) return;
+  if (!chessState.code) return;
+  chessState.ws.send(JSON.stringify({ type: 'chat', text }));
+  chessChatInput.value = '';
+}
+
+chessChatSendBtn.addEventListener('click', sendChessChat);
+chessChatInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') sendChessChat();
 });
