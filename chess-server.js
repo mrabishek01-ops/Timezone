@@ -157,6 +157,19 @@ function attachChessServer(httpServer) {
           break;
         }
 
+        case 'chat': {
+          const game = games.get(ws.gameCode);
+          if (!game) return;
+          const color = colorOf(game, ws);
+          if (!color) return;
+          const text = String(msg.text || '').trim().slice(0, 300);
+          if (!text) return;
+          const payload = { type: 'chat', color, text, ts: Date.now() };
+          send(game.white, payload);
+          send(game.black, payload);
+          break;
+        }
+
         case 'resign': {
           const game = games.get(ws.gameCode);
           if (!game || game.status !== 'active') return;
