@@ -135,6 +135,7 @@
       <button class="tab-btn active" data-tab="converter">Time Converter</button>
       <button class="tab-btn" data-tab="age">Age Calculator</button>
       <button class="tab-btn" data-tab="junk">Junk Finder</button>
+      <button class="tab-btn" data-tab="chess">Secret Room</button>
     </nav>
 
     <section class="card tab-panel" id="converterPanel">
@@ -203,6 +204,88 @@
         <button class="copy-btn" id="copyJunkBtn">Copy cleaned text</button>
       </div>
     </section>
+
+    <section class="card tab-panel hidden" id="chessPanel">
+
+      <div id="chessGate">
+        <div class="secret-room-lock">🔒</div>
+        <div class="secret-room-title">Secret Room</div>
+        <p class="hint" style="text-align:center; margin-bottom:16px;">This room is private. Enter the access code to continue.</p>
+        <div class="row">
+          <input type="text" id="chessGateCode" placeholder="Access code" style="text-transform:uppercase; letter-spacing:0.1em; text-align:center; font-weight:700;">
+        </div>
+        <button class="icon-btn chess-primary-btn" id="chessGateEnterBtn">Enter Secret Room</button>
+        <div class="secret-room-error" id="chessGateError"></div>
+      </div>
+
+      <div id="chessLobby" class="hidden">
+        <div class="chess-lobby-choice">
+          <button class="choice-btn active" id="chessShowCreate">Create Game</button>
+          <button class="choice-btn" id="chessShowJoin">Join Game</button>
+        </div>
+
+        <div id="chessCreatePane">
+          <p class="hint" style="margin-bottom:12px;">Start a new game and share the code with a friend.</p>
+          <button class="icon-btn chess-primary-btn" id="chessCreateBtn">Create Game</button>
+        </div>
+
+        <div id="chessJoinPane" class="hidden">
+          <div class="row">
+            <label for="chessJoinCode">Enter Game Code</label>
+            <input type="text" id="chessJoinCode" maxlength="8" placeholder="e.g. AB7K92" style="text-transform:uppercase; letter-spacing:0.15em; font-weight:700; text-align:center;">
+          </div>
+          <button class="icon-btn chess-primary-btn" id="chessJoinBtn">Join Game</button>
+        </div>
+      </div>
+
+      <div id="chessWaiting" class="hidden">
+        <div class="chess-code-display">
+          <div class="hint">GAME CODE</div>
+          <div class="chess-code" id="chessCodeText">------</div>
+        </div>
+        <div class="actions" style="justify-content:center; gap:8px;">
+          <button class="icon-btn" id="chessCopyBtn">Copy Code</button>
+          <button class="icon-btn" id="chessShareBtn">Share Game</button>
+        </div>
+        <div class="chess-status-row">
+          <span class="chess-waiting-dots"><span></span><span></span><span></span></span>
+          <span id="chessStatusText">Waiting for opponent...</span>
+        </div>
+        <button class="icon-btn" id="chessCancelBtn" style="margin-top:14px;">Cancel</button>
+      </div>
+
+      <div id="chessGame" class="hidden">
+        <div class="chess-topbar">
+          <div class="chess-player-info">
+            <span class="chess-color-dot chess-dot-white"></span>
+            <span id="chessYouAre">You: White</span>
+          </div>
+          <div class="chess-turn-indicator" id="chessTurnIndicator">White to move</div>
+        </div>
+
+        <div class="chess-board-wrap">
+          <div class="chess-board" id="chessBoard"></div>
+        </div>
+
+        <div class="chess-game-footer">
+          <div class="chess-message" id="chessMessage"></div>
+          <button class="icon-btn" id="chessResignBtn">Resign</button>
+        </div>
+      </div>
+
+    </section>
+
+    <div class="modal-overlay hidden" id="promotionModal">
+      <div class="modal-box">
+        <div class="hint" style="margin-bottom:10px;">Choose promotion piece</div>
+        <div class="promotion-choices">
+          <button class="promo-choice" data-piece="q">♕</button>
+          <button class="promo-choice" data-piece="r">♖</button>
+          <button class="promo-choice" data-piece="b">♗</button>
+          <button class="promo-choice" data-piece="n">♘</button>
+        </div>
+      </div>
+    </div>
 
     <footer class="app-footer">Handles DST automatically · No data leaves your browser</footer>
   </div>

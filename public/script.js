@@ -213,6 +213,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.getElementById('converterPanel').classList.toggle('hidden', tab !== 'converter');
     document.getElementById('agePanel').classList.toggle('hidden', tab !== 'age');
     document.getElementById('junkPanel').classList.toggle('hidden', tab !== 'junk');
+    document.getElementById('chessPanel').classList.toggle('hidden', tab !== 'chess');
   });
 });
 
@@ -461,3 +462,376 @@ function setTimeFormat(mode) {
 format12Btn.addEventListener('click', () => setTimeFormat('12'));
 format24Btn.addEventListener('click', () => setTimeFormat('24'));
 setTimeFormat(timeFormatMode);
+
+// ---------- Chess ----------
+
+const PIECE_GLYPH = {
+  p: '♟', r: '♜', n: '♞', b: '♝', q: '♛', k: '♚', // rendered black glyphs; recolored via CSS for white
+};
+
+const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+
+function parseFenBoard(fen) {
+  const boardPart = fen.split(' ')[0];
+  const rows = boardPart.split('/'); // rows[0] = rank 8 ... rows[7] = rank 1
+  const board = {}; // square -> { color: 'w'|'b', type: 'p'|'n'|... }
+  rows.forEach((rowStr, rowIdx) => {
+    const rank = 8 - rowIdx;
+    let file = 0;
+    for (const ch of rowStr) {
+      if (/\d/.test(ch)) {
+        file += parseInt(ch, 10);
+      } else {
+        const square = FILES[file] + rank;
+        board[square] = { color: ch === ch.toUpperCase() ? 'w' : 'b', type: ch.toLowerCase() };
+        file += 1;
+      }
+    }
+  });
+  return board;
+}
+
+const chessState = {
+  ws: null,
+  code: null,
+  myColor: null,       // 'white' | 'black'
+  board: {},
+  turn: 'white',
+  selected: null,
+  legalMoves: [],       // [{to, promotion, capture}]
+  lastMove: null,       // {from, to}
+  inCheck: false,
+  status: 'lobby'       // lobby | waiting | active | over
+};
+
+// DOM refs
+const chessLobby = document.getElementById('chessLobby');
+const chessShowCreate = document.getElementById('chessShowCreate');
+const chessShowJoin = document.getElementById('chessShowJoin');
+const chessCreatePane = document.getElementById('chessCreatePane');
+const chessJoinPane = document.getElementById('chessJoinPane');
+const chessCreateBtn = document.getElementById('chessCreateBtn');
+const chessJoinBtn = document.getElementById('chessJoinBtn');
+const chessJoinCode = document.getElementById('chessJoinCode');
+
+const chessWaiting = document.getElementById('chessWaiting');
+const chessCodeText = document.getElementById('chessCodeText');
+const chessCopyBtn = document.getElementById('chessCopyBtn');
+const chessShareBtn = document.getElementById('chessShareBtn');
+const chessStatusText = document.getElementById('chessStatusText');
+const chessCancelBtn = document.getElementById('chessCancelBtn');
+
+const chessGame = document.getElementById('chessGame');
+const chessBoard = document.getElementById('chessBoard');
+const chessYouAre = document.getElementById('chessYouAre');
+const chessTurnIndicator = document.getElementById('chessTurnIndicator');
+const chessMessage = document.getElementById('chessMessage');
+const chessResignBtn = document.getElementById('chessResignBtn');
+
+const promotionModal = document.getElementById('promotionModal');
+
+const chessGate = document.getElementById('chessGate');
+const chessGateCode = document.getElementById('chessGateCode');
+const chessGateEnterBtn = document.getElementById('chessGateEnterBtn');
+const chessGateError = document.getElementById('chessGateError');
+const SECRET_ROOM_CODE = 'ABHICHESS';
+
+function chessShowView(view) {
+  chessGate.classList.toggle('hidden', view !== 'gate');
+  chessLobby.classList.toggle('hidden', view !== 'lobby');
+  chessWaiting.classList.toggle('hidden', view !== 'waiting');
+  chessGame.classList.toggle('hidden', view !== 'game');
+}
+
+function attemptSecretRoomEntry() {
+  const entered = chessGateCode.value.trim().toUpperCase();
+  if (entered === SECRET_ROOM_CODE) {
+    chessGateError.textContent = '';
+    chessGateCode.value = '';
+    chessShowView('lobby');
+  } else {
+    chessGateError.textContent = 'Incorrect code. Access denied.';
+    chessGateCode.value = '';
+    chessGateCode.focus();
+  }
+}
+
+chessGateEnterBtn.addEventListener('click', attemptSecretRoomEntry);
+chessGateCode.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') attemptSecretRoomEntry();
+});
+
+chessShowView('gate');
+
+chessShowCreate.addEventListener('click', () => {
+  chessShowCreate.classList.add('active');
+  chessShowJoin.classList.remove('active');
+  chessCreatePane.classList.remove('hidden');
+  chessJoinPane.classList.add('hidden');
+});
+
+chessShowJoin.addEventListener('click', () => {
+  chessShowJoin.classList.add('active');
+  chessShowCreate.classList.remove('active');
+  chessJoinPane.classList.remove('hidden');
+  chessCreatePane.classList.add('hidden');
+});
+
+function ensureChessSocket() {
+  if (chessState.ws && chessState.ws.readyState === WebSocket.OPEN) return chessState.ws;
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const ws = new WebSocket(`${protocol}//${window.location.host}/ws/chess`);
+  chessState.ws = ws;
+
+  ws.addEventListener('message', (event) => {
+    let msg;
+    try { msg = JSON.parse(event.data); } catch { return; }
+    handleChessMessage(msg);
+  });
+
+  ws.addEventListener('close', () => {
+    if (chessState.status === 'active') {
+      chessMessage.textContent = 'Connection lost.';
+    }
+  });
+
+  return ws;
+}
+
+function handleChessMessage(msg) {
+  switch (msg.type) {
+    case 'created':
+      chessState.code = msg.code;
+      chessState.myColor = 'white';
+      chessState.status = 'waiting';
+      chessCodeText.textContent = msg.code;
+      chessStatusText.textContent = 'Waiting for opponent...';
+      chessShowView('waiting');
+      break;
+
+    case 'joined':
+      chessState.code = msg.code;
+      chessState.myColor = 'black';
+      chessState.status = 'waiting';
+      chessCodeText.textContent = msg.code;
+      chessStatusText.textContent = 'Connecting...';
+      chessShowView('waiting');
+      break;
+
+    case 'opponent_joined':
+      chessStatusText.textContent = 'Opponent connected ✓';
+      break;
+
+    case 'start':
+      chessState.status = 'active';
+      chessState.board = parseFenBoard(msg.fen);
+      chessState.turn = msg.turn;
+      chessState.selected = null;
+      chessState.legalMoves = [];
+      chessState.lastMove = null;
+      chessState.inCheck = false;
+      chessYouAre.textContent = `You: ${chessState.myColor === 'white' ? 'White' : 'Black'}`;
+      chessMessage.textContent = '';
+      chessShowView('game');
+      renderChessBoard();
+      updateTurnIndicator();
+      break;
+
+    case 'legal_moves':
+      chessState.legalMoves = msg.moves;
+      renderChessBoard();
+      break;
+
+    case 'move':
+      chessState.board = parseFenBoard(msg.fen);
+      chessState.turn = msg.turn;
+      chessState.selected = null;
+      chessState.legalMoves = [];
+      chessState.lastMove = { from: msg.from, to: msg.to };
+      chessState.inCheck = msg.check;
+      renderChessBoard();
+      updateTurnIndicator();
+      break;
+
+    case 'game_over':
+      chessState.status = 'over';
+      chessMessage.textContent = chessGameOverText(msg);
+      break;
+
+    case 'opponent_left':
+      chessState.status = 'over';
+      chessMessage.textContent = 'Opponent disconnected. You can start a new game.';
+      break;
+
+    case 'error':
+      chessMessage.textContent = msg.message;
+      break;
+  }
+}
+
+function chessGameOverText(msg) {
+  const youWon = msg.winner && msg.winner === chessState.myColor;
+  const youLost = msg.winner && msg.winner !== chessState.myColor;
+  switch (msg.reason) {
+    case 'checkmate': return youWon ? 'Checkmate — you win! ♔' : youLost ? 'Checkmate — you lose.' : 'Checkmate.';
+    case 'resignation': return youWon ? 'Opponent resigned — you win!' : 'You resigned.';
+    case 'stalemate': return 'Draw by stalemate.';
+    case 'threefold_repetition': return 'Draw by threefold repetition.';
+    case 'insufficient_material': return 'Draw — insufficient material.';
+    case 'draw': return 'Game drawn.';
+    default: return 'Game over.';
+  }
+}
+
+function updateTurnIndicator() {
+  if (chessState.status !== 'active') return;
+  const isMyTurn = chessState.turn === chessState.myColor;
+  chessTurnIndicator.textContent = isMyTurn
+    ? "Your move"
+    : `${chessState.turn === 'white' ? 'White' : 'Black'} to move`;
+}
+
+function renderChessBoard() {
+  chessBoard.innerHTML = '';
+  const flip = chessState.myColor === 'black';
+  const ranks = flip ? [1, 2, 3, 4, 5, 6, 7, 8] : [8, 7, 6, 5, 4, 3, 2, 1];
+  const files = flip ? [...FILES].reverse() : FILES;
+
+  ranks.forEach((rank) => {
+    files.forEach((file) => {
+      const square = file + rank;
+      const isLight = (FILES.indexOf(file) + rank) % 2 === 0;
+      const el = document.createElement('div');
+      el.className = 'chess-square ' + (isLight ? 'light' : 'dark');
+      el.dataset.square = square;
+
+      if (chessState.lastMove && (square === chessState.lastMove.from || square === chessState.lastMove.to)) {
+        el.classList.add('last-move');
+      }
+
+      const piece = chessState.board[square];
+      if (piece) {
+        const glyph = PIECE_GLYPH[piece.type];
+        const span = document.createElement('span');
+        span.textContent = glyph;
+        span.className = piece.color === 'w' ? 'piece-white' : 'piece-black';
+        el.appendChild(span);
+
+        if (chessState.inCheck && piece.type === 'k' &&
+            ((piece.color === 'w' && chessState.turn === 'white') || (piece.color === 'b' && chessState.turn === 'black'))) {
+          el.classList.add('in-check');
+        }
+      }
+
+      if (chessState.selected === square) {
+        el.classList.add('selected');
+      }
+
+      const legalMove = chessState.legalMoves.find((m) => m.to === square);
+      if (legalMove) {
+        const marker = document.createElement('div');
+        marker.className = legalMove.capture ? 'legal-capture-ring' : 'legal-dot';
+        el.appendChild(marker);
+      }
+
+      el.addEventListener('click', () => onChessSquareClick(square));
+      chessBoard.appendChild(el);
+    });
+  });
+}
+
+function onChessSquareClick(square) {
+  if (chessState.status !== 'active') return;
+  const isMyTurn = chessState.turn === chessState.myColor;
+  const piece = chessState.board[square];
+  const myPieceColor = chessState.myColor === 'white' ? 'w' : 'b';
+
+  // Clicked one of the highlighted legal destinations -> attempt the move
+  const targetMove = chessState.legalMoves.find((m) => m.to === square);
+  if (chessState.selected && targetMove) {
+    const from = chessState.selected;
+    if (targetMove.promotion) {
+      promptPromotion((piece_ = 'q') => sendChessMove(from, square, piece_));
+    } else {
+      sendChessMove(from, square, null);
+    }
+    return;
+  }
+
+  // Otherwise, (re)select a square if it's my own piece and my turn
+  if (!isMyTurn) { chessState.selected = null; chessState.legalMoves = []; renderChessBoard(); return; }
+  if (piece && piece.color === myPieceColor) {
+    chessState.selected = square;
+    chessState.legalMoves = [];
+    renderChessBoard();
+    chessState.ws.send(JSON.stringify({ type: 'legal_moves', square }));
+  } else {
+    chessState.selected = null;
+    chessState.legalMoves = [];
+    renderChessBoard();
+  }
+}
+
+function sendChessMove(from, to, promotion) {
+  chessState.ws.send(JSON.stringify({ type: 'move', from, to, promotion: promotion || undefined }));
+  chessState.selected = null;
+  chessState.legalMoves = [];
+}
+
+function promptPromotion(callback) {
+  promotionModal.classList.remove('hidden');
+  const handler = (e) => {
+    const btn = e.target.closest('.promo-choice');
+    if (!btn) return;
+    promotionModal.classList.add('hidden');
+    promotionModal.removeEventListener('click', handler);
+    callback(btn.dataset.piece);
+  };
+  promotionModal.addEventListener('click', handler);
+}
+
+chessCreateBtn.addEventListener('click', () => {
+  const ws = ensureChessSocket();
+  const doCreate = () => ws.send(JSON.stringify({ type: 'create' }));
+  if (ws.readyState === WebSocket.OPEN) doCreate();
+  else ws.addEventListener('open', doCreate, { once: true });
+});
+
+chessJoinBtn.addEventListener('click', () => {
+  const code = chessJoinCode.value.trim().toUpperCase();
+  if (!code) return;
+  const ws = ensureChessSocket();
+  const doJoin = () => ws.send(JSON.stringify({ type: 'join', code }));
+  if (ws.readyState === WebSocket.OPEN) doJoin();
+  else ws.addEventListener('open', doJoin, { once: true });
+});
+
+chessCopyBtn.addEventListener('click', () => {
+  navigator.clipboard.writeText(chessState.code || '');
+});
+
+chessShareBtn.addEventListener('click', () => {
+  const shareText = `Join my chess game! Code: ${chessState.code}`;
+  if (navigator.share) {
+    navigator.share({ title: 'Friendly Chess', text: shareText }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(shareText);
+    chessStatusText.textContent = 'Share text copied to clipboard!';
+    setTimeout(() => {
+      if (chessState.status === 'waiting') chessStatusText.textContent = 'Waiting for opponent...';
+    }, 2000);
+  }
+});
+
+chessCancelBtn.addEventListener('click', () => {
+  if (chessState.ws) chessState.ws.close();
+  chessState.status = 'lobby';
+  chessState.code = null;
+  chessShowView('lobby');
+});
+
+chessResignBtn.addEventListener('click', () => {
+  if (chessState.status === 'active' && chessState.ws) {
+    chessState.ws.send(JSON.stringify({ type: 'resign' }));
+  }
+});
